@@ -41,7 +41,7 @@ class MCPAgentOrchestrator:
         llm_client: AsyncOpenAI | None = None,
     ) -> None:
         self.config = config
-        self.llm = llm_client or AsyncOpenAI(api_key=config.openai_api_key)
+        self.llm = llm_client or (\n            AsyncOpenAI(api_key=config.openai_api_key) if config.openai_api_key else None\n        )
 
     async def _connect(self, stack: AsyncExitStack):
         connected: list[tuple[MCPServerConfig, ClientSession]] = []
@@ -109,7 +109,7 @@ class MCPAgentOrchestrator:
             rounds = 0
 
             while rounds < self.config.max_tool_rounds:
-                response = await self.llm.chat.completions.create(
+                if self.llm is None:\n                    raise RuntimeError("OPENAI_API_KEY is not configured")\n                response = await self.llm.chat.completions.create(
                     model=self.config.openai_model,
                     messages=messages,
                     tools=tool_specs or None,
